@@ -3,9 +3,10 @@
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
 (add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/") t)
 (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/") t)
-(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
+;(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
 (package-initialize)
 
+(add-to-list 'load-path "~/git/org-mode/lisp")
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
   (package-install 'use-package))
@@ -164,7 +165,8 @@
 (use-package gruvbox-theme
   :ensure t
   :config
-  (load-theme 'gruvbox t))
+  ;(load-theme 'gruvbox t)
+  )
 
 (use-package dired
   :config
@@ -190,16 +192,14 @@
  '(comint-scroll-to-bottom-on-input t)
  '(comint-scroll-to-bottom-on-output nil)
  '(custom-safe-themes
-   (quote
-    ("8e797edd9fa9afec181efbfeeebf96aeafbd11b69c4c85fa229bb5b9f7f7e66c" default)))
+   '("a22f40b63f9bc0a69ebc8ba4fbc6b452a4e3f84b80590ba0a92b4ff599e53ad0" "8e797edd9fa9afec181efbfeeebf96aeafbd11b69c4c85fa229bb5b9f7f7e66c" default))
  '(eshell-scroll-to-bottom-on-input t)
  '(eshell-scroll-to-bottom-on-output nil)
  '(package-selected-packages
-   (quote
-    (multiple-cursors magit helpful zoom-window shackle ob-http gruvbox-theme theme-gruvbox emacs-theme-gruvbox eyebrowse company-jedi emacs-company-jedi markdown-mode docker-tramp exec-path-from-shell company-restclient company-quickhelp company-elisp company which-key paredit-everywhere ace-window paredit use-package better-defaults)))
+   '(multiple-cursors magit helpful zoom-window shackle ob-http gruvbox-theme theme-gruvbox emacs-theme-gruvbox eyebrowse company-jedi emacs-company-jedi markdown-mode docker-tramp exec-path-from-shell company-restclient company-quickhelp company-elisp company which-key paredit-everywhere ace-window paredit use-package better-defaults))
  '(pixel-scroll-mode t)
  '(protect-buffer-bury-p nil)
- '(tramp-default-method "ssh" nil (tramp)))
+ '(tramp-default-method "ssh"))
 
 (use-package magit
   :ensure t
@@ -216,6 +216,7 @@
 (setq show-paren-delay 0)
 (setq show-trailing-whitespace t)
 (setq show-paren-style 'mixed)
+(setq set-mark-command-repeat-pop t)
 ;; Set default font
 (set-face-attribute 'default nil
                     :family "SF Mono"
