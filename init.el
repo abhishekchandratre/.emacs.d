@@ -1,12 +1,16 @@
+;;; init.el -- init file
+;;; Commentary:
+
+;;; Code:
 (require 'package)
 (setq package-enable-at-startup nil)
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
 (add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/") t)
 (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/") t)
-;(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
+(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
 (package-initialize)
 
-(add-to-list 'load-path "~/git/org-mode/lisp")
+;; (add-to-list 'load-path "~/git/org-mode/lisp")
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
   (package-install 'use-package))
@@ -22,6 +26,11 @@
 (use-package better-defaults
   :ensure t)
 
+(use-package flycheck
+:ensure t
+:init
+(global-flycheck-mode t))
+
 (use-package paredit
   :ensure t
   :config
@@ -33,85 +42,38 @@
     (add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode)
     (add-hook 'scheme-mode-hook           #'enable-paredit-mode))
 
-(use-package paredit-everywhere
-  :ensure t
-  :config
-  (add-hook 'prog-mode-hook 'paredit-everywhere-mode))
-
 (use-package which-key
   :ensure t
   :config
   (which-key-mode))
 
+;; Modular in-buffer completion framework for Emacs
+;; http://company-mode.github.io/
 (use-package company
+  :diminish company-mode
   :ensure t
-  :diminish
-  :commands (company-mode company-indent-or-complete-common)
-  :init
-  (dolist (hook '(emacs-lisp-mode-hook
-                  c-mode-common-hook))
-    (add-hook hook
-              #'(lambda ()
-                  (local-set-key (kbd "<tab>")
-                                 #'company-indent-or-complete-common))))
   :config
-  ;; From https://github.com/company-mode/company-mode/issues/87
-  ;; See also https://github.com/company-mode/company-mode/issues/123
-  (defadvice company-pseudo-tooltip-unless-just-one-frontend
-      (around only-show-tooltip-when-invoked activate)
-    (when (company-explicit-action-p)
-      ad-do-it))
-
-  ;; See http://oremacs.com/2017/12/27/company-numbers/
-  (defun ora-company-number ()
-    "Forward to `company-complete-number'.
-  Unless the number is potentially part of the candidate.
-  In that case, insert the number."
-    (interactive)
-    (let* ((k (this-command-keys))
-           (re (concat "^" company-prefix k)))
-      (if (cl-find-if (lambda (s) (string-match re s))
-                      company-candidates)
-          (self-insert-command 1)
-        (company-complete-number (string-to-number k)))))
-
-  (let ((map company-active-map))
-    (mapc
-     (lambda (x)
-       (define-key map (format "%d" x) 'ora-company-number))
-     (number-sequence 0 9))
-    (define-key map " " (lambda ()
-                          (interactive)
-                          (company-abort)
-                          (self-insert-command 1))))
-
-  (defun check-expansion ()
-    (save-excursion
-      (if (outline-on-heading-p t)
-          nil
-        (if (looking-at "\\_>") t
-          (backward-char 1)
-          (if (looking-at "\\.") t
-            (backward-char 1)
-            (if (looking-at "->") t nil))))))
-
-  (define-key company-mode-map [tab]
-    '(menu-item "maybe-company-expand" nil
-                :filter (lambda (&optional _)
-                          (when (check-expansion)
-                            #'company-complete-common))))
-
-
-    (progn
-       (defun company-mode/backend-with-yas (backend)
-         (if (and (listp backend) (member 'company-yasnippet backend))
-             backend
-           (append (if (consp backend) backend (list backend))
-                   '(:with company-yasnippet))))
-       (setq company-backends
-             (mapcar #'company-mode/backend-with-yas company-backends)))
-
-  (global-company-mode 1))
+  (add-hook 'after-init-hook 'global-company-mode)
+  (setq
+   company-echo-delay 0
+   company-idle-delay 0.2
+   company-minimum-prefix-length 1
+   company-tooltip-align-annotations t
+   company-tooltip-limit 20)
+  ;; Default colors are awful - borrowed these from gocode (thanks!):
+  ;; https://github.com/nsf/gocode/tree/master/emacs-company#color-customization
+  (set-face-attribute
+   'company-preview nil :foreground "black" :underline t)
+  (set-face-attribute
+   'company-preview-common nil :inherit 'company-preview)
+  (set-face-attribute
+   'company-tooltip nil :background "lightgray" :foreground "black")
+  (set-face-attribute
+   'company-tooltip-selection nil :background "steelblue" :foreground "white")
+  (set-face-attribute
+   'company-tooltip-common nil :foreground "darkgreen" :weight 'bold)
+  (set-face-attribute
+   'company-tooltip-common-selection nil :foreground "black" :weight 'bold))
 
 (setq-local company-backend '(company-elisp))
 
@@ -141,8 +103,7 @@
 (use-package eyebrowse
   :ensure t
   :config
-  ;(eyebrowse-mode t)
-  )
+  (eyebrowse-mode t))
 
 (use-package exec-path-from-shell
   :ensure t
@@ -157,25 +118,33 @@
   (setq shackle-rules '((compilation-mode :noselect t))
         shackle-default-rule '(:select t)))
 
-(use-package zoom-window
-  :ensure t
-  :config
-  (global-set-key (kbd "s-f z") 'zoom-window-zoom))
-
 (use-package gruvbox-theme
   :ensure t
   :config
-  ;(load-theme 'gruvbox t)
+  ;; (load-theme 'gruvbox t)
   )
 
+(require 'dired)
+(require 'dired-x)
 (use-package dired
   :config
   ;; Make dired less verbose
   (add-hook 'dired-mode-hook (lambda () (dired-hide-details-mode 1)))
   ;; Move files between split panes
-  (setq dired-dwim-target t)
-  )
+  (setq dired-dwim-target t))
 
+(use-package page-break-lines
+  :ensure t
+  :config
+  (add-hook 'help-mode-hook 'page-break-lines-mode))
+
+(use-package ledger-mode
+  :ensure t
+  :mode ("\\.dat\\'"
+         "\\.ledger\\'")
+  :custom (ledger-clear-whole-transactions t))
+
+  (use-package flycheck-ledger :after ledger-mode :ensure t)
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -196,8 +165,8 @@
  '(eshell-scroll-to-bottom-on-input t)
  '(eshell-scroll-to-bottom-on-output nil)
  '(package-selected-packages
-   '(multiple-cursors magit helpful zoom-window shackle ob-http gruvbox-theme theme-gruvbox emacs-theme-gruvbox eyebrowse company-jedi emacs-company-jedi markdown-mode docker-tramp exec-path-from-shell company-restclient company-quickhelp company-elisp company which-key paredit-everywhere ace-window paredit use-package better-defaults))
- '(pixel-scroll-mode t)
+   '(flycheck-ledger ledger-mode page-break-lines form-feed flycheck multiple-cursors magit helpful zoom-window shackle ob-http gruvbox-theme theme-gruvbox emacs-theme-gruvbox eyebrowse company-jedi emacs-company-jedi markdown-mode docker-tramp exec-path-from-shell company-restclient company-quickhelp company-elisp company which-key paredit-everywhere ace-window paredit use-package better-defaults))
+ '(pixel-scroll-mode nil)
  '(protect-buffer-bury-p nil)
  '(tramp-default-method "ssh"))
 
@@ -224,6 +193,8 @@
                     :weight 'normal
                     :width 'normal)
 ;; org mode
+(require 'org)
+(require 'org-capture)
 ;; active Babel languages
 (org-babel-do-load-languages
  'org-babel-load-languages
@@ -247,3 +218,13 @@
  ;; If there is more than one, they won't work right.
  )
 (put 'narrow-to-region 'disabled nil)
+(setq gc-cons-threshold 50000000)
+(fset 'yes-or-no-p 'y-or-n-p)
+(global-auto-revert-mode t)
+(setq-default tab-width 4
+              indent-tabs-mode nil)
+(add-hook 'before-save-hook 'whitespace-cleanup)
+(setq inhibit-startup-screen t)
+(blink-cursor-mode -1)
+(winner-mode 1)
+;;; init.el ends here
