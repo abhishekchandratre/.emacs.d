@@ -34,6 +34,11 @@
 (use-package better-defaults
   :ensure t)
 
+(use-package minions
+  :ensure t
+  :config
+  (minions-mode))
+
 (use-package flycheck
 :ensure t
 :init
@@ -45,6 +50,26 @@
   :bind-keymap ("C-c p" . projectile-command-map)
   :config
   (projectile-mode))
+
+(use-package counsel-projectile
+  :ensure t
+  :config
+  (counsel-projectile-mode))
+
+(use-package eyebrowse
+  :ensure t
+  :bind (
+         ("C-c w x" . eyebrowse-close-window-config)
+         ("C-c w c" . eyebrowse-create-window-config)
+         ("C-c w i" . eyebrowse-prev-window-config)
+         ("C-c w o" . eyebrowse-next-window-config))
+  :init
+  (setq eyebrowse-keymap-prefix (kbd "C-c w"))
+  (global-unset-key (kbd "C-c C-w"))
+  :config
+  (eyebrowse-mode t)
+  (setq eyebrowse-new-workspace t))
+
 
 (use-package paredit
   :ensure t
@@ -62,12 +87,6 @@
   :ensure t
   :config
   (add-hook 'after-init-hook 'global-company-mode)
-  (setq
-   company-echo-delay 0
-   company-idle-delay 0.2
-   company-minimum-prefix-length 1
-   company-tooltip-align-annotations t
-   company-tooltip-limit 20)
   ;; Default colors are awful - borrowed these from gocode (thanks!):
   ;; https://github.com/nsf/gocode/tree/master/emacs-company#color-customization
   (set-face-attribute
@@ -146,13 +165,20 @@
 (add-hook 'before-save-hook 'whitespace-cleanup)
 (setq inhibit-startup-screen t)
 (blink-cursor-mode -1)
-(winner-mode 1)
 (column-number-mode 1)
+
+(use-package winner
+  :unless noninteractive
+  :bind (("M-N" . winner-redo)
+         ("M-P" . winner-undo))
+  :config
+  (winner-mode 1))
+
 
 ;; Set default font
 (set-face-attribute 'default nil
                     :family "SF Mono"
-                    :height 1
+                    :height 150
                     :weight 'normal
                     :width 'normal)
 
@@ -184,7 +210,9 @@
 (global-set-key "\C-cc" 'org-capture)
 (setq org-capture-templates
       '(("b" "Budget" table-line (file+olp+datetree "~/Dropbox/neworg/budget.org" "Transactions")
-         "| %^{Description} | %^{Cost} | %^{prompt|essentials|security|goals|lifestyle|discretionary} |" :prepend t :kill-buffer t :unnarrowed t)))
+         "| %^{Description} | %^{Cost} | %^{prompt|essentials|security|goals|lifestyle|discretionary} |" :prepend t :kill-buffer t :unnarrowed t)
+        ("j" "Jira" entry (file+olp "~/Dropbox/neworg/projects.org" "Office" "JIRA")
+         "* TODO %?\n  %i\n  %a")))
 
 (use-package ispell
   :no-require t
@@ -333,22 +361,23 @@
          ("s" . notmuch-search)
          ("z" . notmuch-tree))
   :config
-  (setq notmuch-search-result-format
-      '(
-        ("authors" . "%-60s")
-        ("subject" . "\n%-80s\n")
-        ("date" . "%-12s ")
-        ("tags" . "%-68s\n")
-        )))
+  )
 
-(add-hook 'notmuch-hello-mode-hook (lambda () (disable-theme (car custom-enabled-themes))))
-(add-hook 'change-major-mode-hook
-          (lambda ()
-            (if (not (string-equal (car custom-enabled-themes) 'spacemacs-dark)) (load-theme 'spacemacs-dark t))))
+(require 'starttls)
+(setq starttls-use-gnutls t)
+
+(require 'smtpmail)
+(setq send-mail-function 'smtpmail-send-it
+      message-send-mail-function 'smtpmail-send-it
+      smtpmail-auth-credentials (expand-file-name "~/.authinfo")
+      smtpmail-smtp-server "smtp.office365.com"
+      smtpmail-stream-type 'starttls smtpmail-smtp-service 587)
 
 (use-package spacemacs-common
   :ensure spacemacs-theme
-  :config (load-theme 'spacemacs-dark t))
+  :config
+  ;(load-theme 'spacemacs-dark t)
+  )
 
 (use-package doom-themes
   :ensure t)
@@ -373,19 +402,15 @@
  '(ledger-clear-whole-transactions t t)
  '(notmuch-search-oldest-first nil)
  '(package-selected-packages
-   '(projectile doom-themes emacs-doom-themes spacemacs-theme notmuch docker-tramp counsel ivy which-key use-package paredit ob-http multiple-cursors magit ledger-mode flycheck-ledger exec-path-from-shell dashboard company-restclient company-quickhelp company-jedi better-defaults))
- '(send-mail-function 'smtpmail-send-it)
- '(smtpmail-smtp-server "smtp.outlook.com")
- '(smtpmail-smtp-service 587))
+   '(minions doom-modeline eyebrowse counsel-projectile projectile doom-themes emacs-doom-themes spacemacs-theme notmuch docker-tramp counsel ivy which-key use-package paredit ob-http multiple-cursors magit ledger-mode flycheck-ledger exec-path-from-shell dashboard company-restclient company-quickhelp company-jedi better-defaults)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(notmuch-search-date ((t (:foreground "#bc6ec5" :height 0.8))))
- '(notmuch-search-matching-authors ((t (:inherit default :foreground "chartreuse3" :weight bold))))
- '(notmuch-search-non-matching-authors ((t (:foreground "chartreuse3" :weight thin))))
- '(notmuch-search-subject ((t (:inherit default :weight light))))
- '(notmuch-tag-face ((t (:foreground "#4f97d7" :height 0.8)))))
+ )
 ;;; init.el ends here
 (put 'erase-buffer 'disabled nil)
+(setq starttls-use-gnutls t)
+(setq smtpmail-debug-info t)
+(setq smtpmail-debug-verb t)
