@@ -6,7 +6,7 @@
 (setq package-enable-at-startup nil)
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
 (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/") t)
-(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
+;; (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
 (package-initialize)
 
 ;; (add-to-list 'load-path "~/git/org-mode/lisp")
@@ -38,6 +38,11 @@
 (use-package better-defaults
   :ensure t)
 
+(use-package yaml-mode
+  :ensure t
+  :config
+  (add-hook 'yaml-mode-hook (lambda () (display-line-numbers-mode))))
+
 (use-package minions
   :ensure t
   :config
@@ -60,6 +65,12 @@
   :config
   (counsel-projectile-mode))
 
+(use-package projectile-ripgrep
+  :ensure t
+  :bind (
+         ("C-c SPC" . projectile-ripgrep)))
+
+
 (use-package eyebrowse
   :ensure t
   :bind (
@@ -79,6 +90,14 @@
   :ensure t
   :config
   (paredit-mode))
+
+(autoload 'enable-paredit-mode "paredit"
+  "Turn on pseudo-structural editing of Lisp code."
+  t)
+(add-hook 'emacs-lisp-mode-hook       'enable-paredit-mode)
+(add-hook 'lisp-mode-hook             'enable-paredit-mode)
+(add-hook 'lisp-interaction-mode-hook 'enable-paredit-mode)
+(add-hook 'scheme-mode-hook           'enable-paredit-mode)
 
 (use-package which-key
   :ensure t
@@ -194,6 +213,7 @@
 (setq org-catch-invisible-edits t)
 (use-package ob-http
   :ensure t)
+(add-hook 'org-mode-hook 'org-indent-mode)
 
 (org-babel-do-load-languages
  'org-babel-load-languages
@@ -308,6 +328,7 @@
          ("C-h f"   . counsel-describe-function)
          ("C-x r b" . counsel-bookmark)
          ("M-x"     . counsel-M-x)
+         ("C-s"     . counsel-grep-or-swiper)
          ;; ("M-y"     . counsel-yank-pop)
 
          ("M-s f" . counsel-file-jump)
@@ -353,6 +374,8 @@
   :ensure t)
 
 (add-to-list 'load-path "~/.emacs.d/elpa/notmuch/")
+(add-to-list 'load-path "~/git/org-mode/lisp/")
+(add-to-list 'load-path "~/git/org-mode/contrib/lisp/")
 
 (defvar abhi-notmuch-keymap nil "Notmuch Shortcuts.")
 (setq abhi-notmuch-keymap (make-sparse-keymap))
@@ -365,7 +388,7 @@
          ("s" . notmuch-search)
          ("z" . notmuch-tree))
   :config
-  )
+  (require 'ol-notmuch))
 
 (use-package starttls
   :config
@@ -375,7 +398,8 @@
   :config
   (setq send-mail-function 'smtpmail-send-it
         message-send-mail-function 'smtpmail-send-it
-        smtpmail-auth-credentials (expand-file-name "~/.authinfo")
+        mail-host-address "smtp.office365.com"
+        smtpmail-auth-credentials (expand-file-name "~/.authinfo.gpg")
         smtpmail-smtp-server "smtp.office365.com"
         smtpmail-stream-type 'starttls smtpmail-smtp-service 587)
   (setq smtpmail-debug-info t)
